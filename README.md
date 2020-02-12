@@ -6,7 +6,7 @@ This should almost be a drop in replacement for the existing LocalPool. All exis
 2. `try_run_one` now returns an `Option<usize>` instead of a boolean. This usize will correspond to the ID received from the previous APIs and can be used with external tracking mechanism to know if a future is complete.
 
 ## Example
-```
+```rust
 let mut spawned_ids = std::collections::HashSet::new();
 let mut pool = LocalPool::new();
 let spawner = pool.spawner();
