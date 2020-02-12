@@ -169,7 +169,7 @@ impl LocalPool {
     /// Run all tasks in the pool to completion.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
+    /// use local_pool_with_id::LocalPool;
     ///
     /// let mut pool = LocalPool::new();
     ///
@@ -188,7 +188,7 @@ impl LocalPool {
     /// Runs all the tasks in the pool until the given future completes.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
+    /// use local_pool_with_id::LocalPool;
     ///
     /// let mut pool = LocalPool::new();
     /// # let my_app  = async {};
@@ -220,10 +220,10 @@ impl LocalPool {
     }
 
     /// Runs all tasks and returns after completing one future or until no more progress
-    /// can be made. Returns `true` if one future was completed, `false` otherwise.
+    /// can be made. Returns the associated ID if one future was completed, `None` otherwise.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
+    /// use local_pool_with_id::LocalPool;
     /// use futures::task::LocalSpawnExt;
     /// use futures::future::{ready, pending};
     ///
@@ -234,12 +234,12 @@ impl LocalPool {
     /// spawner.spawn_local(ready(())).unwrap();
     /// spawner.spawn_local(pending()).unwrap();
     ///
-    /// // Run the two ready tasks and return true for them.
-    /// pool.try_run_one(); // returns true after completing one of the ready futures
-    /// pool.try_run_one(); // returns true after completing the other ready future
+    /// // Run the two ready tasks and returns the IDs for them.
+    /// assert!(pool.try_run_one().is_some());
+    /// assert!(pool.try_run_one().is_some());
     ///
     /// // the remaining task can not be completed
-    /// assert!(!pool.try_run_one()); // returns false
+    /// assert!(pool.try_run_one().is_none()); // returns false
     /// ```
     ///
     /// This function will not block the calling thread and will return the moment
@@ -271,7 +271,7 @@ impl LocalPool {
     /// on any task.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
+    /// use local_pool_with_id::LocalPool;
     /// use futures::task::LocalSpawnExt;
     /// use futures::future::{ready, pending};
     ///
@@ -426,7 +426,7 @@ pub trait SpawnWithIdExt: SpawnWithId {
     /// This method returns a [`Result`] that contains a [`SpawnError`] if
     /// spawning fails.
     ///
-    /// You can use [`spawn_with_handle`](SpawnExt::spawn_with_handle) if
+    /// You can use [`spawn_with_handle`](SpawnWithIdExt::spawn_with_handle) if
     /// you want to spawn a future with output other than `()` or if you want
     /// to be able to await its completion.
     ///
@@ -436,13 +436,14 @@ pub trait SpawnWithIdExt: SpawnWithId {
     /// today. Feel free to use this method in the meantime.
     ///
     /// ```
-    /// use futures::executor::ThreadPool;
-    /// use futures::task::SpawnExt;
+    /// use local_pool_with_id::LocalPool;
+    /// use local_pool_with_id::SpawnWithIdExt;
     ///
-    /// let executor = ThreadPool::new().unwrap();
+    /// let executor = LocalPool::new();
+    /// let spawner = executor.spawner();
     ///
     /// let future = async { /* ... */ };
-    /// executor.spawn(future).unwrap();
+    /// spawner.spawn(future).unwrap();
     /// ```
     fn spawn<Fut>(&self, future: Fut) -> Result<usize, SpawnError>
     where
@@ -454,20 +455,22 @@ pub trait SpawnWithIdExt: SpawnWithId {
     /// Spawns a task that polls the given future to completion and returns a
     /// future that resolves to the spawned future's output.
     ///
-    /// This method returns a [`Result`] that contains a [`RemoteHandle`](crate::future::RemoteHandle), or, if
-    /// spawning fails, a [`SpawnError`]. [`RemoteHandle`](crate::future::RemoteHandle) is a future that
+    /// This method returns a [`Result`] that contains a [`RemoteHandle`](futures::future::RemoteHandle), or, if
+    /// spawning fails, a [`SpawnError`]. [`RemoteHandle`](futures::future::RemoteHandle) is a future that
     /// resolves to the output of the spawned future.
     ///
     /// ```
-    /// use futures::executor::{block_on, ThreadPool};
+    /// use futures::executor::block_on;
     /// use futures::future;
-    /// use futures::task::SpawnExt;
+    /// use local_pool_with_id::LocalPool;
+    /// use local_pool_with_id::SpawnWithIdExt;
     ///
-    /// let executor = ThreadPool::new().unwrap();
+    /// let mut executor = LocalPool::new();
+    /// let spawner = executor.spawner();
     ///
     /// let future = future::ready(1);
-    /// let (id, join_handle_fut) = executor.spawn_with_handle(future).unwrap();
-    /// assert_eq!(block_on(join_handle_fut), 1);
+    /// let (id, join_handle_fut) = spawner.spawn_with_handle(future).unwrap();
+    /// assert_eq!(executor.run_until(join_handle_fut), 1);
     /// ```
     fn spawn_with_handle<Fut>(
         &self,
@@ -491,7 +494,7 @@ pub trait LocalSpawnWithIdExt: LocalSpawnWithId {
     /// This method returns a [`Result`] that contains a [`SpawnError`] if
     /// spawning fails.
     ///
-    /// You can use [`spawn_with_handle`](SpawnExt::spawn_with_handle) if
+    /// You can use [`spawn_with_handle`](SpawnWithIdExt::spawn_with_handle) if
     /// you want to spawn a future with output other than `()` or if you want
     /// to be able to await its completion.
     ///
@@ -501,8 +504,8 @@ pub trait LocalSpawnWithIdExt: LocalSpawnWithId {
     /// today. Feel free to use this method in the meantime.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
-    /// use futures::task::LocalSpawnExt;
+    /// use local_pool_with_id::LocalPool;
+    /// use local_pool_with_id::LocalSpawnWithIdExt;
     ///
     /// let executor = LocalPool::new();
     /// let spawner = executor.spawner();
@@ -520,13 +523,13 @@ pub trait LocalSpawnWithIdExt: LocalSpawnWithId {
     /// Spawns a task that polls the given future to completion and returns a
     /// future that resolves to the spawned future's output.
     ///
-    /// This method returns a [`Result`] that contains a [`RemoteHandle`](crate::future::RemoteHandle), or, if
-    /// spawning fails, a [`SpawnError`]. [`RemoteHandle`](crate::future::RemoteHandle) is a future that
+    /// This method returns a [`Result`] that contains a [`RemoteHandle`](futures::future::RemoteHandle), or, if
+    /// spawning fails, a [`SpawnError`]. [`RemoteHandle`](futures::future::RemoteHandle) is a future that
     /// resolves to the output of the spawned future.
     ///
     /// ```
-    /// use futures::executor::LocalPool;
-    /// use futures::task::LocalSpawnExt;
+    /// use local_pool_with_id::LocalPool;
+    /// use local_pool_with_id::LocalSpawnWithIdExt;
     ///
     /// let mut executor = LocalPool::new();
     /// let spawner = executor.spawner();
