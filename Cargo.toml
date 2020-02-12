@@ -8,7 +8,7 @@ homepage = "https://github.com/TannerRogalsky/local-pool-with-id.git"
 repository = "https://github.com/TannerRogalsky/local-pool-with-id"
 license = "MIT"
 readme = "README.md"
-keywords = ["executor", "local", "local pool", "localpool"]
+keywords = ["executor", "local", "localpool"]
 categories = ["asynchronous"]
 
 [dependencies]
