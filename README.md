@@ -5,6 +5,9 @@ This should almost be a drop in replacement for the existing LocalPool. All exis
 1. New `(Local)SpawnWithId` traits have been implemented. These accept the same arguments as their non-ID counterparts but return a unique ID that can be used to identify whether a spawned future has been completed.
 2. `try_run_one` now returns an `Option<usize>` instead of a boolean. This usize will correspond to the ID received from the previous APIs and can be used with external tracking mechanism to know if a future is complete.
 
+## Motivation
+The existing `LocalPool` allowed you to run all futures, opaquely, in a non-blocking way or to, blockingly, run a single future to completion and retrieve it's output. By providing tracking IDs, we can use an external lookup to infer which futures are finished and ask them for their results directly.   
+
 ## Example
 ```rust
 let mut spawned_ids = std::collections::HashSet::new();
