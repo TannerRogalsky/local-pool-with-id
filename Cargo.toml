@@ -1,8 +1,12 @@
 [package]
 name = "local-pool-with-id"
+description = "A minor variation on a LocalPool executor which exposes unique IDs for tracking future completion."
 version = "0.1.0"
 authors = ["Tanner Rogalsky <tanner@tannerrogalsky.com>"]
 edition = "2018"
+homepage = "https://github.com/TannerRogalsky/local-pool-with-id.git"
+repository = "https://github.com/TannerRogalsky/local-pool-with-id"
+license-file = "LICENSE"
 
 [dependencies]
 futures = "0.3"
